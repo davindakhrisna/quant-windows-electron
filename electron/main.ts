@@ -45,22 +45,21 @@ const createWindow = () => {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, load the index.html from the app directory
-    const indexPath = path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
+    // In production, the dist folder is packaged alongside dist-electron
+    // Both are in the app.asar at the root level
+    const indexPath = path.join(__dirname, '../dist/index.html');
     console.log('Loading from:', indexPath);
     console.log('__dirname:', __dirname);
-    console.log('resourcesPath:', process.resourcesPath);
     console.log('isPackaged:', app.isPackaged);
     
     mainWindow.loadFile(indexPath).catch(err => {
       console.error('Error loading file:', err);
-      // Fallback: try alternative path
-      const fallbackPath = path.join(__dirname, '../dist/index.html');
-      console.log('Trying fallback path:', fallbackPath);
-      mainWindow?.loadFile(fallbackPath).catch(err2 => {
-        console.error('Fallback also failed:', err2);
-        mainWindow?.loadURL('data:text/html,<h1>Error loading app</h1><p>' + err2.message + '</p>');
-      });
+      mainWindow?.loadURL('data:text/html,<h1>Error loading app</h1><pre>' + JSON.stringify({
+        error: err.message,
+        __dirname,
+        indexPath,
+        isPackaged: app.isPackaged
+      }, null, 2) + '</pre>');
     });
   }
 
