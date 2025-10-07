@@ -20,6 +20,10 @@ const createWindow = () => {
     ? path.join(__dirname, 'preload.mjs')
     : path.join(__dirname, 'preload.js');
 
+  console.log('App isPackaged:', app.isPackaged);
+  console.log('Preload path:', preloadPath);
+  console.log('__dirname:', __dirname);
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1200,
