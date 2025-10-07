@@ -15,6 +15,11 @@ if (squirrelStartup) {
 let mainWindow: BrowserWindow | null = null;
 
 const createWindow = () => {
+  // Determine the correct preload path
+  const preloadPath = app.isPackaged
+    ? path.join(__dirname, 'preload.mjs')
+    : path.join(__dirname, 'preload.js');
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -23,7 +28,7 @@ const createWindow = () => {
     minHeight: 600,
     show: false, // Don't show until ready
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -36,14 +41,22 @@ const createWindow = () => {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, the dist folder is at the root level in the packaged app
-    const indexPath = path.join(__dirname, '../dist/index.html');
+    // In production, load the index.html from the app directory
+    const indexPath = path.join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
     console.log('Loading from:', indexPath);
     console.log('__dirname:', __dirname);
+    console.log('resourcesPath:', process.resourcesPath);
+    console.log('isPackaged:', app.isPackaged);
+    
     mainWindow.loadFile(indexPath).catch(err => {
       console.error('Error loading file:', err);
-      // Fallback: try to show error in window
-      mainWindow?.loadURL('data:text/html,<h1>Error loading app</h1><p>' + err.message + '</p>');
+      // Fallback: try alternative path
+      const fallbackPath = path.join(__dirname, '../dist/index.html');
+      console.log('Trying fallback path:', fallbackPath);
+      mainWindow?.loadFile(fallbackPath).catch(err2 => {
+        console.error('Fallback also failed:', err2);
+        mainWindow?.loadURL('data:text/html,<h1>Error loading app</h1><p>' + err2.message + '</p>');
+      });
     });
   }
 
