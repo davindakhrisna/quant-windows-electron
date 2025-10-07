@@ -16,6 +16,7 @@ const createWindow = () => {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    show: false, // Don't show until ready
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -30,8 +31,26 @@ const createWindow = () => {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // In production, the dist folder is at the root level in the packaged app
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    console.log('Loading from:', indexPath);
+    console.log('__dirname:', __dirname);
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('Error loading file:', err);
+      // Fallback: try to show error in window
+      mainWindow?.loadURL('data:text/html,<h1>Error loading app</h1><p>' + err.message + '</p>');
+    });
   }
+
+  // Show window when ready to prevent white flash
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+  });
+
+  // Log any errors for debugging
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorCode, errorDescription);
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
